@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<link rel="stylesheet" href="styles.css">
+<script src="lunar.js" defer></script>
+<body>
+    <h2>CONTROL CALLING LUNAR MODULE. MANUAL CONTROL IS NECESSARY<br>
+    YOU MAY RESET FUEL RATE K EACH 10 SECS TO 0 OR ANY VALUE <br>
+    BETWEEN 8 & 200 LBS/SEC. YOU'VE 16000 LBS FUEL. ESTIMATED <br>
+    FREE FALL IMPACT TIME-120 SECS. CAPSULE WEIGHT-32500 LBS<br>
+    FIRST RADAR CHECK COMING UP
+    <br>
+    <br>
+    <br>
+    COMMENCE LANDING PROCEDURE</h2>
+    <body>
+        <table id="Descent table">
+            <tr>
+                <th>TIME,SECS</th>
+                <th>ALTITUDE, MILES + </th>
+                <th>FT</th>
+                <th>VELOCITY, MPH</th>
+                <th>FUEL, LBS</th>
+                <th>FUEL RATE, LBS/SECS</th>
+            </tr>
+            <tr>
+                <td class="non-editable" id="time"></td>
+                <td class="non-editable" id="altitude"></td>
+                <td class="non-editable" id="altitudeF"></td>
+                <td class="non-editable" id="velocity"></td>
+                <td class="non-editable" id="fuel"></td>
+                <td id="fuel-rate"><input type="text" onkeypress="handleKeyPress(event, this)"></td>
+            </tr>
+        </table>
+    </body>
+</html>
