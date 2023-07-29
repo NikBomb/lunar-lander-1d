@@ -14,17 +14,21 @@ var FT_TO_MILES = 5280.00;
 
 // constants
 var dryMass = 16500; // Capsule weight (LBS)
+var fuelMass = mass - dryMass;
 var gravity = 0.001; // Gravity (miles/second**2)
 var exhaustVelocity = 1.8; // Fuel exhaust velocity (miles/seconds)
 var dt = 10;
-var sub_steps = 1;
-var dt_sim = dt/sub_steps;
-var prev_fuelRate = 0;
+var minimumF = 8;
+var maximumF = 200
+
 var gameOver = false;
+var freeFall = false;
+var tFuelOut;
 var vLanding;
 var tLanding;
 var massLanding;
 var timeLanding;
+
 
 document.getElementById("time").textContent = time;
 document.getElementById("altitude").textContent = altitude;
@@ -38,7 +42,7 @@ table.rows[lastRowIndex].cells[lastCellIndex].childNodes[0].value = "";
 table.rows[lastRowIndex].cells[lastCellIndex].childNodes[0].focus();
 
 function acceptFuelRate(fuelRate){
-    return !isNaN(fuelRate) && (fuelRate == 0 || ( fuelRate >=20 && fuelRate <= 200));    
+    return !isNaN(fuelRate) && (fuelRate == 0 || ( fuelRate >=minimumF && fuelRate <= maximumF));    
 }
 
 function computeVelocity(g, ve, v_in, m, fuelrate, t){
@@ -61,19 +65,24 @@ function addNewRow() {
     table.rows[lastRowIndex].cells[lastCellIndex].childNodes[0].readOnly = true;
 
     if (acceptFuelRate(fuelRate)) {
-        
+        var dt_step = dt;
 
-        final_mass = mass - fuelRate * dt;
-        
+        final_mass = mass - fuelRate * dt_step;
+        if (final_mass <= dryMass){
+            final_mass = dryMass;
+            dt_step = (mass - dryMass) / fuelRate; 
+            tFuelOut = time + dt_step;
+            freeFall = true;
+        }
+
         var vprev = velocity
         var altitudePrev = altitude;
 
-        velocity = computeVelocity(gravity, exhaustVelocity, vprev, mass, fuelRate, dt);
-        altitude = computeAltitude(gravity, vprev, exhaustVelocity, altitudePrev, mass, fuelRate, dt);
-
+        velocity = computeVelocity(gravity, exhaustVelocity, vprev, mass, fuelRate, dt_step);
+        altitude = computeAltitude(gravity, vprev, exhaustVelocity, altitudePrev, mass, fuelRate, dt_step);
         if (altitude <= 0){
             var ta = 0;
-            var tc = dt;
+            var tc = dt_step;
             var tb = 0.5 * (ta + tc);
             
             var ab = computeAltitude(gravity, vprev, exhaustVelocity, altitudePrev, mass, fuelRate, tb);
@@ -95,8 +104,23 @@ function addNewRow() {
             }
             gameOver = true;
         }
+        if (freeFall && !gameOver){
+            var t1 = (velocity - Math.sqrt(velocity * velocity + 2 * gravity *altitude))/gravity; 
+            var t2 = (velocity + Math.sqrt(velocity * velocity + 2 * gravity *altitude))/gravity;
+            var tfree;
+            if (Math.sign(t1) == 1){
+                tfree = t1;
+            } else {
+                tfree = t2;
+            }
+            tLanding = tFuelOut + tfree;
+            vLanding =  velocity - gravity * tfree;
+            massLanding = dryMass;
+            gameOver = true;
+        }
+
     mass = final_mass;
-    time += dt;
+    time += dt_step;
     } else {
         table.rows[lastRowIndex].cells[lastCellIndex].childNodes[0].value += ": NOT POSSIBLE"
     }
@@ -119,9 +143,32 @@ function addNewRow() {
     window.scrollTo(0, table.offsetHeight);
     lastCell.childNodes[0].focus()} else {
         var el = document.createElement("h2");
-        el.innerHTML = "ON THE MOON AT: " + tLanding.toLocaleString(undefined, { maximumFractionDigits: 2 }) + " SECS <br>" + 
-        "IMPACT VELOCITY OF: " + (-vLanding * MILES_SEC_TO_MILES_HOUR).toLocaleString(undefined, { maximumFractionDigits: 2 }) + " M.P.H. <br>" + 
-        "FUEL LEFT: " + (massLanding - dryMass).toLocaleString(undefined, { maximumFractionDigits: 2 }) + " LBS <br>";
+        var stringFuelOut = "";
+        if (freeFall){
+            stringFuelOut = "FUEL OUT AT: " + tFuelOut.toLocaleString(undefined, { maximumFractionDigits: 2 }) + " SECS <br>" ;
+        }
+
+        victoryString = ""
+        vLandingMH = -vLanding * MILES_SEC_TO_MILES_HOUR;
+        vDeep = vLandingMH * 0.27777;
+        if (vLandingMH < 1){
+            victoryString = "PERFECT LANDING !-(LUCKY)"
+        } else if (vLandingMH < 10){
+            victoryString = "GOOD LANDING-(COULD BE BETTER)";
+        } else if (vLandingMH < 22){
+            victoryString = "CONGRATULATIONS ON A POOR LANDING";
+        } else if (vLandingMH < 40){
+            victoryString = "CRAFT DAMAGE. GOOD LUCK";
+        } else if (vLandingMH < 60){
+            victoryString = "CRASH LANDING-YOU'VE 5 HRS OXYGEN";
+        } else {
+            victoryString = "SORRY,BUT THERE WERE NO SURVIVORS-YOU BLEW IT! <br>" +
+            "IN FACT YOU BLASTED A NEW LUNAR CRATER " + vDeep.toLocaleString(undefined, { maximumFractionDigits: 2 }) + " FT. DEEP"
+        }
+        el.innerHTML = stringFuelOut + "ON THE MOON AT: " + tLanding.toLocaleString(undefined, { maximumFractionDigits: 2 }) + " SECS <br>" + 
+        "IMPACT VELOCITY OF: " + (vLandingMH).toLocaleString(undefined, { maximumFractionDigits: 2 }) + " M.P.H. <br>" + 
+        "FUEL LEFT: " + (massLanding - dryMass).toLocaleString(undefined, { maximumFractionDigits: 2 }) + " LBS <br>" + 
+        victoryString + "<br>";
         insertAfter(table, el);
     }
 }
