@@ -52,8 +52,7 @@ function computeVelocity(g, ve, v_in, m, fuelrate, t){
 function computeAltitude(g, v_prev, ve, a_in, m, fuelrate, t){
         var alt = a_in + v_prev * t - 0.5* g *t *t 
         if (fuelrate > 0){ 
-        // alt += ve * ( (m - fuelrate * t)/fuelrate * Math.log((m - fuelrate * t)/fuelrate) + t );
-           alt += ve * ( (t - (m / fuelrate)) * Math.log(m / (m - fuelrate * t) ) + t );
+         alt += ve * ( (m - fuelrate * t)/fuelrate * Math.log((m - fuelrate * t)/m) + t );
         }
         return alt
 }
